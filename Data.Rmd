@@ -1,0 +1,33 @@
+---
+title: "Data"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+## Data Source and Data Cleaning
+
+All the data are downloaded from [World Happiness Report](https://worldhappiness.report/ed/2021/#appendices-and-data): 
+
+* Happiness Data: [Data Panel](https://happiness-report.s3.amazonaws.com/2021/DataPanelWHR2021C2.xls)
+
+This dataset contains 1949 observations of happiness score and related social factors. The data are sourced from 166 different countries or regions covering years from 2005 to 2020. The GDP variables are provided by World Development Indicators (WDI) and healthy life expectancies are extracted from World Health Organization’s (WHO) Global Health Observatory data repository. All the other factors are gather from the survey of Gallup World Poll. 
+
+In order use plotly map to show the world happiness score in each country, it is necessary to change the full name of the English country to the ISO3 abbreviation form, which is the three-letter abbreviation form of the country name. Therefore, we download the package [countrycode](https://vincentarelbundock.github.io/countrycode/) to help us do the transformation. The resulting data file of `happy_iso3` contains a single dataframe with 1931 rows of data on 12 variables. The detailed information about each variables is listed in following section.
+
+## Data Description
+
+* `country_code`: country name in iso3 code format.
+* `country_name`: country name in country name (English) format.
+* `year`: the year of the measurements on that row.
+* `life_ladder`: happiness score.
+* `log_gdp_per_capita`: the statistics of GDP per capita in purchasing power parity.
+* `social_support`: national average of social support data.
+* `healthy_life_expectancy_at_birth`: healthy life expectancy at birth
+* `freedom_to_make_life_choices`: national average freedom to make life choices. 
+* `generosity`: the residual of regressing national average of donation on GDP per capita.
+* `perceptions_of_corruption`: national average of corrpution perceptions score.
+* `positive_affect`: average of three positive affect measures in GWP: happiness, laugh and enjoyment.
+* `negative_affect`: average of three negative affect measures in GWP: worry, sadness and anger.
+
+

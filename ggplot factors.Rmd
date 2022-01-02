@@ -1,0 +1,76 @@
+---
+title: "ggplot factors"
+author: "Yunlin Zhou"
+date: "11/21/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+happy_df = readxl::read_xls('DataPanelWHR2021C2.xls') %>% 
+  janitor::clean_names()
+
+```
+
+```{r}
+happy_df_fac = happy_df%>%
+  filter(year < 2019)
+
+round2 = function(x){
+  if(is.numeric(x))
+  x= round(x, digits = 2)
+  return(x)
+}
+
+happy_df_fac = map_dfc(happy_df_fac, round2)%>%
+  mutate(year = as.character(year))
+```
+
+```{r}
+gg_factor = function(A,B,name){
+  ggplot(happy_df_fac, aes(x = A, y = B))+
+    geom_point(aes(color = year))+
+    geom_smooth(method = "lm")+
+    labs(
+    x = name,
+    y = "Happiness Score",
+  )
+}
+```
+
+```{r}
+
+gg_log = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$log_gdp_per_capita, name = "log_gdp_per_capita")
+
+
+gg_social = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$social_support, name = "social_support")
+
+
+gg_healthy = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$healthy_life_expectancy_at_birth, name = "healthy_life_expectancy_at_birth")
+
+
+gg_freedom = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$freedom_to_make_life_choices, name = "freedom_to_make_life_choices")
+
+
+gg_generosity = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$generosity, name = "generosity")
+
+
+gg_perceptions = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$perceptions_of_corruption, name = "perceptions_of_corruption")
+
+
+gg_positive = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$positive_affect, name = "positive_affect")
+
+
+gg_negative = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$negative_affect, name = "negative_affect")
+
+```
+
+```{r fig.height = 12, fig.width = 8}
+library(patchwork)
+(gg_log + gg_social + gg_healthy +gg_freedom ) / (gg_generosity + gg_perceptions + gg_positive + gg_negative)
+```
+As shown in the plots, all the factors are related to the happiness score. People would feel happy if the country they live in have high GDP, strong social support, high life expectancy, and they could be free to make life choices, also the country is generous and  offering positive affect. On the contrary, if a country has a corrupt government and offers negative affect, people wouldn't have a happy life.

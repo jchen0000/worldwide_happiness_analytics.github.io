@@ -1,0 +1,107 @@
+---
+title: "Regression Analysis"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(modelr)
+library(mgcv)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## Data Distribution
+
+```{r}
+happy_df = readxl::read_xls('DataPanelWHR2021C2.xls') %>% 
+  janitor::clean_names() %>% 
+  rename("happiness_score"= life_ladder)
+```
+
+To identify the significance of relationships and establish a regression model to predict the happiness score, we first take a look on the distribution of each variable.
+
+```{r fig.width=8,fig.height=7}
+par(mfrow= c(3,3))
+# mtext("Variable Distribution", side = 3, line = -2, outer = TRUE)
+for (n in 3:ncol(happy_df)){
+  var = names(happy_df)[n] %>% 
+    str_replace_all("_"," ") %>% 
+    str_to_title()
+  pull(happy_df,n) %>% 
+    hist(main=NA,xlab=var)
+}
+mtext("Variable Distribution", side = 3, line = -2, outer = TRUE)
+```
+
+Here our happiness score follows great bell shape and is relatively non-skewed. Most of the factors are normally distributed. Therefore we can proceed to build regression model.
+
+## Linear regression model
+
+Since all factors are continuous, we can apply fundamental linear regression here.
+
+```{r}
+# General Model
+happy_fit = happy_df %>% 
+  select(-country_name,-year)
+fit = happy_fit %>%
+  lm(happiness_score~., data=.)
+fit_est = fit %>% 
+  broom.mixed::tidy() %>% 
+  mutate(
+    term = str_replace_all(term,"_"," "),
+    term = str_to_title(term))
+
+knitr::kable(fit_est)
+```
+
+The result indicated that `r fit_est[-1,] %>% filter(p.value<0.05) %>% pull(term)` are all significantly correlated with happiness score, while `r fit_est[-1,] %>% filter(p.value>=0.05) %>% pull(term)` does not.
+
+## Model diagnostic
+
+To test if the model follows assumption of normal distribution, we could plot the QQ plots and related diagnostic plots.
+
+```{r fig.width=8,fig.height=7}
+par(mfrow=c(2,2))
+plot(fit)
+```
+
+The majority of data follows normal distribution, thus we could go on.
+
+## Cross Validation
+
+To test the model efficiency and its predictory ability, we apply 100 times of cross validation and calculate the mean value of root mean squared errors (RMSE) over 100 CVs.
+
+```{r}
+set.seed(1)
+
+cv_df = crossv_mc(happy_fit, 100) %>% 
+  mutate(train = map(train,as_tibble),
+         test = map(test, as_tibble)) %>% 
+  mutate(linear_mod = map(train, ~lm(happiness_score ~ ., data = .x)) ) %>% 
+  mutate(
+    rmse_linear = map2_dbl(linear_mod, test, ~rmse(model = .x, data = .y)) )
+```
+
+```{r fig.width=4,fig.height=3}
+ggplot(cv_df,aes(x="linear",y=rmse_linear)) +
+  geom_violin(fill="lightblue",alpha=0.7) +
+  labs(x = NULL, y = "RMSE",title = "RMSE of Linear Model Cross-Validation")+
+  theme_bw()
+mean_rmse = mean(pull(cv_df,rmse_linear))
+```
+
+Here we can see the mean RMSE is `r mean_rmse`, which is acceptable. Therefore, the model could be used to predict the country's happiness score.
+
+## Model Interpretation
+
+The outcome of the project suggests that happiness has positive associations with GDP per capita in purchasing power parity, social support, healthy life expectancy at birth, national average freedom to make life choices, generosity, positive affect measures (happiness, laugh, and enjoyment), while happiness has negative associations with negative affect measures (worry, sadness and anger) and national corruption.

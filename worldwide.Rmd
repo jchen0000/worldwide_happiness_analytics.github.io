@@ -1,0 +1,99 @@
+---
+title: "Data on Worldwide Happiness"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+<br>
+
+This section is aimed to show the visualization of the worldwide happiness score data, including a world map of happiness in 2018, happiness score rank in 2018, and yearly trend in 6 selected countries from three different happiness-score groups. We selected the data of 2018 because we wanted to see the happiness data of worldwide countries before COVID-19 occurred. These visualizations could also help us see how COVID-19 affected worldwide happiness.
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(countrycode)
+library(plotly)
+library(modelr)
+library(mgcv)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+<br>
+
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+happy_df = readxl::read_xls('DataPanelWHR2021C2.xls') %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    country_continent = countrycode(country_name, "country.name", "continent")
+  ) %>% 
+  relocate(country_continent)
+```
+
+## World Map of Happiness in 2018
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+happy_iso3 = happy_df %>% 
+  subset(
+    country_name != "Kosovo" & country_name != "Somaliland region"
+  ) %>% 
+  mutate(
+    country_code = countrycode(country_name, "country.name", "iso3c")
+  ) %>% 
+  relocate(country_code)
+```
+
+```{r}
+plot_2018_map = happy_iso3 %>% 
+  filter(year == 2018) %>% 
+  plot_ly(
+    type = 'choropleth', locations = ~country_code, z = ~life_ladder,
+    text = ~country_name
+  )
+plot_2018_map
+```
+
+From this plot, we can see that countries in North Europe, Oceania, North America have relatively high happiness scores. These countries include but are not limited to: Finland, Denmark, Switzerland, Netherlands, Norway, New Zealand, Australia, Canada, and the United States. All of these countries are developed countries. Countries in Central Asia and Southern Africa have relatively low happiness scores. These countries include but are not limited to Malawi, Botswana, Zimbabwe, Afghanistan, India, and Myanmar. All of these countries are developing countries.
+
+<br>
+
+## Happiness Score Rank in 2018
+
+```{r}
+happy_df %>% 
+  filter(year == "2018") %>% 
+  mutate( country_name = fct_reorder(country_name, life_ladder) ) %>% 
+  plot_ly(x = ~life_ladder, y = ~country_name, color = ~country_name, type = "bar", colors = "viridis")
+```
+
+We used a bar plot to show the rank of different countries' happiness scores. While we see the happiness on a geographic distribution in the world map, we could clearly see how countries rank from the highest happiness score to the lowest happiness score. We see that Denmark has the highest happiness score and Afghanistan has the lowest happiness score.
+
+<br>
+
+## Yearly Trend in 6 Countries from Different Happiness-Score Group
+
+```{r}
+yearly_trend = 
+  happy_df %>% 
+  filter(country_name == "Denmark" | country_name == "United States" | country_name == "China" | country_name == "Afghanistan" | country_name == "Mongolia" | country_name == "Haiti") %>% 
+  ggplot(aes(group = country_name, x = year, y = life_ladder, color = country_name)) + geom_point(alpha = .5) + geom_line() 
+ggplotly(yearly_trend)
+```
+
+<br>
+
+This plot shows the yearly trend of countries from different happiness score groups. Based on the happiness score rank plot, we divided all countries into three groups: high-happiness-score group, medium-happiness-score group, and low-happiness-score group. We selected two countries from each group and plotted each country's yearly trend of happiness. We discovered that the happiness score of nations in the high-happiness-score category tended to remain consistent throughout time and decrease little during COVID-19. Happiness score of countries in the medium-happiness-score group tends to rise with time and continues to rise over the COVID-19 era. Countries in the low-happiness-score category have a tendency to change over time and decline over the COVID-19 period.
+
+
+
+
+
+

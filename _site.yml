@@ -1,0 +1,29 @@
+name: "Happiness Website"
+output_dir: "."
+navbar:
+  title: "Overview"
+  left:
+    - text: "Data Exploration"
+      menu:
+      - text: "Happiness Worldwide"
+        href: worldwide.html
+      - text: "Related factors"
+        href: Happiness_factors.html
+      - text: "Influnce of COVID19"
+        href: COVID19.html
+    - text: "Data Analysis"
+      href: regression_analysis.html
+    - text: "Map"
+      href: https://yirugong.shinyapps.io/shiny/
+    - text: "Proposal"
+      href: Proposal.html
+    - text: "Report"
+      href : report.html
+  right:
+    - icon: fa-envelope fa-lg
+      href: mailto:<xs2447@cumc.columbia.edu>
+    - icon: fa-github fa-lg
+      href: https://github.com/jchen0000/worldwide_happiness_analytics
+output: 
+  html_document:
+    theme: cosmo

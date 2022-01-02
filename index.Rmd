@@ -1,0 +1,49 @@
+---
+title: "Worldwide Happiness Analytics: Association Between Social Factors and Happiness Score"
+output: 
+  html_document:
+    fig_width: 8
+    fig_height: 6
+    theme: cosmo
+---
+
+<div align="center">
+  <iframe src="https://www.youtube.com/embed/cgLU9vJMlgE" width="80%" height="400" frameborder="0" allowfullscreen=""></iframe>
+</div>
+
+## Motivation
+
+Scientific evidence has shown that being happy will bring positive effects on people's both mental and physical health. Staying happy promotes a person to keep a healthy lifestyle. Mentally, happiness helps people conquer stress and relieve pressure. Physically, being happy boosts people's immune system, protect their heart, and overall reduce potential pain. Happiness may even increase people's life expectancy.
+
+From a nationwide perspective, happier citizens may have better work performance and more supportive social relationships. Specifically, if employees are satisfied with what they do and feel happy about their daily jobs, they are more likely to stay long in their positions. As the turnover rate decreases, the labor cost of companies will decrease and ultimately companies will have more money to hire more employees or expand their business. If couples feel happier staying with each other, they are less likely to get divorced. Numerous studies have shown that stable marriages are associated with a low risk of diseases, ranging from diabetes to cardiovascular and respiratory issues. Supportive social relationships also help citizens to live longer and work more effectively. 
+
+After realizing the importance of happiness, we decided to analyze what affects happiness and in what way can we increase the overall happiness level.
+
+## What You'll Find In This Website
+
+* What factors affect happiness. 
+* In what way do these factors affect happiness. 
+* How to increase happiness score.
+
+## Group Members
+* [Jiaqi Chen](https://jchen0000.github.io/)
+* [Xinran Sun](https://xsun0828.github.io/xs2447.github.io/)
+* [Yiru Gong](https://yirugong.github.io/)
+* [Yunlin Zhou](https://yunlin-zhou.github.io/P8105_hw4_yz4184.github.io/)
+
+<small>
+
+<br>
+
+<p style="text-align: center;">
+Visualizations and analyses performed using <a href="https://cran.r-project.org/">R</a> (4.1.1) and <a href="https://www.rstudio.com/products/rstudio/download/">RStudio</a> (v1.4.1717). <br>
+
+<p style="text-align: center;">
+Additional interactivity added using <a href="https://plot.ly/">plotly</a> (v4.10.0) and <a href="https://shiny.rstudio.com/">Shiny</a> (v1.7.1). <br>
+
+<p style="text-align: center;">
+<a href="https://worldhappiness.report/ed/2021/#appendices-and-data">Click here</a> to see publicly available Data Panel for project World Happiness Report. 
+
+<br>
+
+2021

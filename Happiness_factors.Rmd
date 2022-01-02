@@ -1,0 +1,180 @@
+---
+title: "Factors Related to Happiness Score "
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r echo = FALSE, message = FALSE}
+library(tidyverse)
+library(plotly)
+library(patchwork)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## First sight on factors & happiness score
+
+To better explore the relationship between happiness score and every factor, we made the linear regression plots and calculated related estimates. Further, we analyzed the result and derived to a more direct and accurate conclusion. 
+
+```{r message = FALSE, warning = FALSE}
+# Data Preparation
+round2 = function(x){
+  if(is.numeric(x))
+  x= round(x, digits = 2)
+  return(x)
+}
+
+happy_df_fac = readxl::read_xls('DataPanelWHR2021C2.xls') %>% 
+  janitor::clean_names() %>% 
+  filter(year < 2019) %>% 
+  map_dfc(round2) %>%
+  mutate(year = as.character(year))
+
+# Graphic function
+gg_factor = function(A,B,name){
+  ggplot(happy_df_fac, aes(x = A, y = B))+
+    geom_point(aes(color = year)) +
+    geom_smooth(method = "lm") +
+    labs(
+    x = name,
+    y = "Happiness Score",
+  )
+}
+
+# Plot
+gg_log = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$log_gdp_per_capita, name = "log_gdp_per_capita")
+gg_social = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$social_support, name = "social_support")
+gg_healthy = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$healthy_life_expectancy_at_birth, name = "healthy_life_expectancy_at_birth")
+gg_freedom = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$freedom_to_make_life_choices, name = "freedom_to_make_life_choices")
+gg_generosity = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$generosity, name = "generosity")
+gg_perceptions = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$perceptions_of_corruption, name = "perceptions_of_corruption")
+gg_positive = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$positive_affect, name = "positive_affect")
+gg_negative = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$negative_affect, name = "negative_affect")
+```
+
+```{r fig.height = 12, fig.width = 8, echo = FALSE, message = FALSE, warning = FALSE}
+(gg_log + gg_social + gg_healthy +gg_freedom ) / (gg_generosity + gg_perceptions + gg_positive + gg_negative)
+```
+
+As we can see in the plots, all the factors are related to the happiness score. People would feel happy if the country they live in have high GDP, strong social support, and they could be free to make life choices, also the country is generous and offering positive affect. On the contrary, if a country has a corrupt government, people wouldn’t be happy.
+
+<br>
+
+### Slope
+
+```{r echo = FALSE}
+happy_df_lm = lm(life_ladder ~ log_gdp_per_capita + social_support +
+                   healthy_life_expectancy_at_birth + freedom_to_make_life_choices +
+                   generosity + perceptions_of_corruption + 
+                   positive_affect + negative_affect,
+                 data = happy_df_fac)
+
+coef(happy_df_lm) %>%
+  knitr::kable(col.names = "slope")
+```
+
+As shown in the table, strong social support as well as positive affect could largely encourage people to feel happy but corruption would make people unpleasant.
+
+<br>
+
+## Plots of Factors and Happiness Score
+
+```{r echo = FALSE, warning = FALSE}
+plot_happy = function(A,B,name){
+  happy_B = bind_cols(A=A,B=B,
+                      country_name = happy_df_fac$country_name,
+                      year = happy_df_fac$year) %>% 
+    filter(!is.na(A)) %>%
+    filter(!is.na(B)) %>%
+    arrange(B) %>%
+    mutate(
+    text_label = 
+    str_c("Happiness score: ", A,
+          "\n",name,": ", B,
+           "\nCountry: ", country_name,
+           "\nYear: ", year))
+  
+  fit_B = lm(A ~ B, data = happy_B)
+  
+  happy_B%>%
+    plot_ly(
+      x = ~B,
+      y = ~A,
+      type = "scatter",
+      mode = "markers",
+      color = ~year,
+      text = ~text_label,
+      alpha = 0.5 ) %>%
+    add_lines(x = ~B, y = predict(fit_B), color = NULL) %>%
+    layout(
+      xaxis = list(title = name), yaxis = list(title = "Happiness score")
+    )
+}
+```
+
+
+```{r, warning = FALSE}
+plot_log = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$log_gdp_per_capita, name = "log_gdp_per_capita")
+plot_log
+```
+
+This plot shows a positive association between happiness scores and the statistics of GDP per capita in purchasing power parity.
+
+```{r, warning = FALSE}
+plot_social = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$social_support, name = "social_support")
+plot_social
+```
+
+This plot shows a positive association between happiness scores and national average of social support.
+
+```{r, warning = FALSE}
+plot_healthy = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$healthy_life_expectancy_at_birth, name = "healthy_life_expectancy_at_birth")
+plot_healthy
+```
+
+This plot shows a positive association between happiness scores and  healthy life expectancy at birth.
+
+```{r, warning = FALSE}
+plot_freedom = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$freedom_to_make_life_choices, name = "freedom_to_make_life_choices")
+plot_freedom
+```
+
+This plot shows a positive association between happiness scores and national average freedom to make life choices.
+
+```{r, warning = FALSE}
+plot_generosity = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$generosity, name = "generosity")
+plot_generosity
+```
+
+This plot shows a positive association between happiness scores and the residual of regressing national average of donation on GDP per capita.
+
+```{r, warning = FALSE}
+plot_perceptions = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$perceptions_of_corruption, name = "perceptions_of_corruption")
+plot_perceptions
+```
+
+This plot shows a negative association between happiness scores and national average of corrpution perceptions.
+
+```{r, warning = FALSE}
+plot_positive = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$positive_affect, name = "positive_affect")
+plot_positive
+```
+
+This plot shows a positive association between happiness scores and average of three positive affect measures in GWP: happiness, laugh and enjoyment.
+
+
+```{r, warning = FALSE}
+plot_negative = plot_happy(A=happy_df_fac$life_ladder,B =happy_df_fac$negative_affect, name = "negative_affect")
+plot_negative
+
+```
+
+This plot shows a negative association between happiness scores and average of three negative affect measures in GWP: worry, sadness and anger.

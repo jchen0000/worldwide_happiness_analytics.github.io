@@ -1,0 +1,300 @@
+---
+title: "Report"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(countrycode)
+library(plotly)
+library(modelr)
+library(mgcv)
+library(patchwork)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+<br>
+
+# Motivation
+
+Scientific evidence has shown that being happy will bring positive effects on people's both mental and physical health. Staying happy promotes a person to keep a healthy lifestyle. Mentally, happiness helps people conquer stress and relieve pressure. Physically, being happy boosts people's immune system, protect their heart, and overall reduce potential pain. Happiness may even increase people's life expectancy.
+
+From a nationwide perspective, happier citizens may have better work performance and more supportive social relationships. Specifically, if employees are satisfied with what they do and feel happy about their daily jobs, they are more likely to stay long in their positions. As the turnover rate decreases, the labor cost of companies will decrease and ultimately companies will have more money to hire more employees or expand their business. If couples feel happier staying with each other, they are less likely to get divorced. Numerous studies have shown that stable marriages are associated with a low risk of diseases, ranging from diabetes to cardiovascular and respiratory issues. Supportive social relationships also help citizens to live longer and work more effectively. 
+
+After realizing the importance of happiness, we decided to analyze what affects happiness and in what way can we increase the overall happiness level.
+
+<br>
+
+# Related Work
+
+In the beginning, we were browsing on [Kaggle](https://www.kaggle.com), trying to gain some motivation from published data and projects. Then we found a linked website called [World Happiness Report](https://worldhappiness.report). On this website, we discovered happiness reports from different countries in different years. We figured this could be an  interesting topic, so we looked up a few related articles. These articles helped us understand the significance of happiness, not only for individuals but also for overall nations. Therefore, we decided to analyze happiness with data from World Happiness Report. These inspiring articles are listed below.
+
+* "Why Governments Should Care More about Happiness." S. Arafa, April 5, 2019. [link](https://yy3019.github.io/P8105_final_project.github.io/report.html)
+* "How Being Happy Makes You Healthier." D. Coyle, August 27, 2017. [link](https://www.healthline.com/nutrition/happiness-and-health)
+* "The pursuit of happiness—and its economic benefits." February 26, 2020.[link](https://drivinginnovation.ie.edu/the-pursuit-of-happiness-and-its-economic-benefits/)
+
+<br>
+
+# Initial Questions
+
+Through the early stage of our study, we came up with a few questions based on the 2021 world happiness report. These questions guided us to analyze data, explore findings, and organize results. These questions are listed below.
+
+* Which country has the highest happiness score and which country has the lowest?
+* How is happiness distributed in the world? 
+* What factors affect happiness score and happiness distribution?
+* What can governments do to increase happiness level?
+
+<br>
+
+# Data Source
+
+All the data are downloaded from [World Happiness Report](https://worldhappiness.report/ed/2021/#appendices-and-data): 
+
+* Happiness Data: [Data Panel](https://happiness-report.s3.amazonaws.com/2021/DataPanelWHR2021C2.xls)
+
+This dataset contains 1949 observations of happiness score and related social factors. The data are sourced from 166 different countries or regions covering years from 2005 to 2020. The GDP variables are provided by World Development Indicators (WDI) and healthy life expectancies are extracted from World Health Organization’s (WHO) Global Health Observatory data repository. All the other factors are gather from the survey of Gallup World Poll. 
+
+<br>
+
+## Data Cleaning
+
+```{r, warning=FALSE}
+happy_df = readxl::read_xls('DataPanelWHR2021C2.xls') %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    country_continent = countrycode(country_name, "country.name", "continent")
+  ) %>% 
+  relocate(country_continent)
+```
+
+We Used `janitor::clean_names` to clean the data names. To clearly know which continent each country belongs to, we used  `countrycode` function to add a continent column. In order use plotly map to show the world happiness score in each country, it is necessary to change the full name of the English country to the ISO3 abbreviation form, which is the three-letter abbreviation form of the country name. Therefore, we downloaded the package [countrycode](https://vincentarelbundock.github.io/countrycode/) to help us do the transformation. The resulting data file of `happy_iso3` contains a single dataframe with 1931 rows of data on 12 variables. The detailed information about each variables is listed in following section. 
+
+<br>
+
+## Data Description
+
+* `country_code`: country name in iso3 code format.
+* `country_name`: country name in country name (English) format.
+* `year`: the year of the measurements on that row.
+* `life_ladder`: happiness score.
+* `log_gdp_per_capita`: the statistics of GDP per capita in purchasing power parity.
+* `social_support`: national average of social support data.
+* `healthy_life_expectancy_at_birth`: healthy life expectancy at birth
+* `freedom_to_make_life_choices`: national average freedom to make life choices. 
+* `generosity`: the residual of regressing national average of donation on GDP per capita.
+* `perceptions_of_corruption`: national average of corrpution perceptions score.
+* `positive_affect`: average of three positive affect measures in GWP: happiness, laugh and enjoyment.
+* `negative_affect`: average of three negative affect measures in GWP: worry, sadness and anger.
+
+<br>
+
+# Exploratory analysis
+In this part, we analyzed the basic patterns and characteristics of happiness. We used a world map to plot happiness distribution, a bar plot to show happiness score ranking, a line plot to display the  happiness score trend on a yearly base, and scatter plots to manifest the relationship between factors and happiness score.
+
+<br>
+
+## World Map of Happiness
+
+We decided to use `plotly` to show the happiness score around the world. We added a `country_code` column which provides the iso3 code of each country because plotly need iso3 country code (3-letter abbreviations of country names) to draw country map. We also deleted Kosovo and Somaliland region because they do not have corresponding iso3 code. 
+
+```{r}
+happy_iso3 = happy_df %>% 
+  subset(
+    country_name != "Kosovo" & country_name != "Somaliland region"
+  ) %>% 
+  mutate(
+    country_code = countrycode(country_name, "country.name", "iso3c")
+  ) %>% 
+  relocate(country_code)
+```
+
+We focused on Year 2018 because we wanted to know the happiness score before COVID-19. Each country's life ladder (happiness) score is shown on the map. 
+
+```{r}
+happy_iso3 %>% 
+  filter(year == 2018) %>% 
+  plot_ly(
+    type = 'choropleth', locations = ~country_code, z = ~life_ladder,
+    text = ~country_name
+  )
+```
+
+<br>
+
+## Happiness Score Rank in 2018
+
+We used data of 2018 to plot this graph because we wanted to know people's happiness rank before COVID-19 started. Before COVID-19 emerged, Denmark had the highest happiness score, while Afghanistan had the lowest happiness score.
+
+```{r}
+happy_df %>% 
+  filter(year == "2018") %>% 
+  mutate(country_name = fct_reorder(country_name, life_ladder)) %>% 
+  plot_ly(
+    x = ~life_ladder, y = ~country_name, color = ~country_name, 
+    type = "bar", colors = "viridis") %>% 
+  layout(
+    xaxis = list(title = "Happiness Score of 2018"), yaxis = list(title = "Country")
+  ) 
+```
+
+<br>
+
+## Yearly Trend
+
+We wanted to see countries' happiness score trend on a yearly base and chose two countries from each of three groups: high-happiness-score group, medium-happiness-score group, and low-happiness-score group to plot this graph. The selected countries are Denmark, United States, China, Mongolia, Afghanistan, and Haiti. We saw that the happiness score of countries from high-happiness-score group tends to stay stable over years and go slightly lower during COVID-19 period. The happiness score of countries from medium-happiness-score group tends to increase over years and keep increasing during COVID-19 period. The happiness score of countries from low-happiness-score group tends to fluctuate over years and decrease during COVID-19 period.
+
+```{r}
+yearly_trend = 
+  happy_df %>% 
+  filter(country_name == "Denmark" | country_name == "United States" | country_name == "China" | country_name == "Afghanistan" | country_name == "Mongolia" | country_name == "Haiti") %>% 
+  ggplot(aes(x = year, y = life_ladder, group = country_name, color = country_name)) +
+    geom_point(alpha = .5) + 
+    geom_line() +
+  labs(
+    title = "Happiness Score Yearly Trend",
+    x = "Year",
+    y = "Happiness Score"
+  )
+ggplotly(yearly_trend)
+```
+
+<br>
+
+## Factors Related to Happiness Score
+
+To better explore the relationship between all the factors and happiness score, we used the `ggplot` and `plotly` to visualize the data and present the linear regression.
+
+```{r message = FALSE, warning = FALSE}
+# Data Preparation
+happy_df_fac = happy_df %>%
+  filter(year < 2019)
+
+round2 = function(x){
+  if (is.numeric(x))
+  x = round(x, digits = 2)
+  return(x)
+}
+
+happy_df_fac = map_dfc(happy_df_fac, round2) %>%
+  mutate(year = as.character(year))
+
+# Graphic function
+gg_factor = function(A,B,name){
+  ggplot(happy_df_fac, aes(x = A, y = B)) +
+    geom_point(aes(color = year)) +
+    geom_smooth(method = "lm") +
+    labs(
+    x = name,
+    y = "Happiness Score",
+  )
+}
+
+# Plot
+gg_log = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$log_gdp_per_capita, name = "log_gdp_per_capita")
+gg_social = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$social_support, name = "social_support")
+gg_healthy = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$healthy_life_expectancy_at_birth, name = "healthy_life_expectancy_at_birth")
+gg_freedom = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$freedom_to_make_life_choices, name = "freedom_to_make_life_choices")
+gg_generosity = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$generosity, name = "generosity")
+gg_perceptions = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$perceptions_of_corruption, name = "perceptions_of_corruption")
+gg_positive = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$positive_affect, name = "positive_affect")
+gg_negative = gg_factor(A=happy_df_fac$life_ladder,B =happy_df_fac$negative_affect, name = "negative_affect")
+```
+
+```{r fig.height = 12, fig.width = 8, message = FALSE, warning = FALSE}
+(gg_log + gg_social + gg_healthy +gg_freedom ) / (gg_generosity + gg_perceptions + gg_positive + gg_negative)
+```
+
+As we can see in the plots, all the factors are related to the happiness score. People would feel happy if the country they live in have high GDP, strong social support, and they could be free to make life choices, also the country is generous and offering positive affect. On the contrary, if a country has a corrupt government, people wouldn’t be happy.
+
+<br>
+
+# Statistical Analysis
+
+To identify the significance of relationships and establish a regression model to predict the happiness score, we first take a look on the distribution of each variable.
+
+```{r}
+par(mfrow= c(3,3))
+for (n in 3:ncol(happy_df)){
+  var = names(happy_df)[n]
+  pull(happy_df,n) %>% hist(main=var,xlab=var)
+}
+```
+
+Here our response variable `lie_ladder` follows great bell shape and is relatively non-skewed. Most of the factors are normally distributed. Therefore we can proceed to build regression model.
+
+<br>
+
+## Linear Regression Model
+
+Since all factors are continuous, we can apply fundamental multivariable linear regression (MLR) here.
+
+```{r}
+# General Model
+happy_fit = happy_df %>% 
+  select(-country_name,-year)
+fit = happy_fit %>% 
+  lm(life_ladder~., data=.) %>% 
+  broom.mixed::tidy()
+knitr::kable(fit)
+```
+
+The result indicated that `r fit[-1,] %>% filter(p.value<0.05) %>% pull(term)` are all significantly correlated with happiness score, while `r fit[-1,] %>% filter(p.value>=0.05) %>% pull(term)` does not.
+
+<br>
+
+## Cross Validation
+
+To test the model efficiency and its predictory ability, we apply 100 times of cross validation and calculate the mean value of root mean squared errors (RMSE) over 100 CVs.
+
+```{r}
+set.seed(1)
+
+cv_df = crossv_mc(happy_fit, 100) %>% 
+  mutate(
+    train = map(train,as_tibble),
+    test = map(test, as_tibble)) %>% 
+  mutate(
+    linear_mod = map(train, ~lm(life_ladder ~ ., data = .x)) ) %>% 
+  mutate(
+    rmse_linear = map2_dbl(linear_mod, test, ~rmse(model = .x, data = .y)) )
+```
+
+```{r}
+ggplot(cv_df,aes(x = "linear",y = rmse_linear)) + geom_violin()
+mean_rmse = mean(pull(cv_df,rmse_linear))
+mean_rmse
+```
+
+Here we can see the mean RMSE is `r mean_rmse`, which is acceptable. Therefore, the model could be used to predict the country's happiness score.
+
+<br>
+
+# Conclusions and Discussion
+
+The outcome of the project suggests that happiness has positive associations with  GDP per capita in purchasing power parity, social support, healthy life expectancy at birth, national average freedom to make life choices, generosity, positive affect measures (happiness, laugh, and enjoyment), while happiness has negative associations with negative affect measures (worry, sadness and anger) and national corruption.
+
+In order to let more people feel happier, governments could surge the development of economics, provide more jobs, and increase the GDP per capita in purchasing power parity. Governments could also invest more in scientific, medical, and health industries so that the life expectancy of human beings has the potential to increase. governments should provide more social support to people in need and provide residents more freedom to make their own choices. When residents have more happiness, they are able to work more effectively, have a more stable social life, and overall surge the development.
+
+<br>
+
+## Next Steps
+
+To advance the project, it would be necessary to consider more factors and more importantly to obtain more data. Factors that could affect the happiness of nations include but are not limited to income fluctuations, marital status modifications, educational level, self-esteem, and optimism. Additionally, it would be beneficial if more data in 2019 and 2021 could be collected. These data could help us gain a better view of happiness fluctuation during COVID-19 so that we could analyze how happiness was affected by COVID-19.
+
+
+
+
+
+
+
+
