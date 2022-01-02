@@ -21,9 +21,9 @@ navbar:
       href : report.html
   right:
     - icon: fa-envelope fa-lg
-      href: mailto:<xs2447@cumc.columbia.edu>
+      href: mailto:<jc5681@cumc.columbia.edu>
     - icon: fa-github fa-lg
-      href: https://github.com/jchen0000/worldwide_happiness_analytics
+      href: https://github.com/jchen0000/worldwide_happiness_analytics.github.io
 output: 
   html_document:
     theme: cosmo
