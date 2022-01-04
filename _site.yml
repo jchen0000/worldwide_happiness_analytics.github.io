@@ -12,7 +12,7 @@ navbar:
       - text: "Influnce of COVID19"
         href: COVID19.html
     - text: "Data Analysis"
-      href: regression_analysis.html
+      href: Regression_analysis.html
     - text: "Map"
       href: https://yirugong.shinyapps.io/shiny/
     - text: "Proposal"
